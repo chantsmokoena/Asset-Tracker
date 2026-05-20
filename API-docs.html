@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AssetTrack API — Documentation</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui.min.css">
+  <style>
+    body { margin: 0; background: #0a0c10; }
+    .swagger-ui .topbar { background: #111318; border-bottom: 1px solid #1f2330; }
+    .swagger-ui .topbar .download-url-wrapper { display: none; }
+    .swagger-ui .info .title { color: #00e5a0; }
+    .swagger-ui .info { margin: 20px 0; }
+    #swagger-ui { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+    .topbar-wrapper img { display: none; }
+    .topbar-wrapper::before {
+      content: '⚙ AssetTrack API';
+      color: #00e5a0;
+      font-family: monospace;
+      font-size: 18px;
+      font-weight: bold;
+      padding: 12px 0;
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<div id="swagger-ui"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/swagger-ui/5.17.14/swagger-ui-bundle.min.js"></script>
+<script>
+const spec = {
+  openapi: "3.0.0",
+  info: {
+    title: "AssetTrack API",
+    description: "IT Asset Management REST API — Portfolio Project by **Chantel Hlongwane**\n\nDemonstrates full CRUD operations, filtering, search, and analytics endpoints built with Python FastAPI + SQLite.",
+    version: "1.0.0",
+    contact: {
+      name: "Chantel Hlongwane",
+      url: "https://chantsmokoena.github.io"
+    }
+  },
+  servers: [{ url: "http://localhost:8000", description: "Local development server" }],
+  tags: [
+    { name: "Health", description: "Service health check" },
+    { name: "Assets", description: "CRUD operations for IT assets" },
+    { name: "Analytics", description: "Asset statistics and reporting" }
+  ],
+  paths: {
+    "/": {
+      get: {
+        tags: ["Health"],
+        summary: "Health Check",
+        description: "Returns the service status and version.",
+        operationId: "health_check",
+        responses: {
+          "200": {
+            description: "Service is healthy",
+            content: {
+              "application/json": {
+                example: { status: "ok", service: "AssetTrack API", version: "1.0.0" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/assets": {
+      get: {
+        tags: ["Assets"],
+        summary: "List Assets",
+        description: "Retrieve all assets. Supports filtering by status, category, and text search.",
+        operationId: "list_assets",
+        parameters: [
+          { name: "status", in: "query", schema: { type: "string", enum: ["active","allocated","maintenance","decommissioned"] }, description: "Filter by asset status" },
+          { name: "category", in: "query", schema: { type: "string", enum: ["Laptop","Desktop","Server","Networking","Peripheral","Mobile"] }, description: "Filter by category" },
+          { name: "search", in: "query", schema: { type: "string" }, description: "Search across name, department, serial number" }
+        ],
+        responses: {
+          "200": {
+            description: "List of assets",
+            content: {
+              "application/json": {
+                example: [
+                  { id: "AST-001", name: "Dell Latitude 5520", category: "Laptop", status: "allocated", department: "Software Development", assigned_to: "T. Mokoena", serial_num: "DL-2024-001", purchase_date: "2024-01-15", notes: "Developer workstation", created_at: "2024-01-15 09:00:00" }
+                ]
+              }
+            }
+          }
+        }
+      },
+      post: {
+        tags: ["Assets"],
+        summary: "Register Asset",
+        description: "Add a new IT asset to the system.",
+        operationId: "create_asset",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name", "category"],
+                properties: {
+                  name: { type: "string", example: "Dell Latitude 5520" },
+                  category: { type: "string", enum: ["Laptop","Desktop","Server","Networking","Peripheral","Mobile"], example: "Laptop" },
+                  status: { type: "string", enum: ["active","allocated","maintenance","decommissioned"], default: "active" },
+                  department: { type: "string", example: "ICT Operations" },
+                  assigned_to: { type: "string", example: "N. Dlamini" },
+                  serial_num: { type: "string", example: "DL-2024-001" },
+                  purchase_date: { type: "string", format: "date", example: "2024-01-15" },
+                  notes: { type: "string", example: "Developer workstation" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "201": {
+            description: "Asset created successfully",
+            content: {
+              "application/json": {
+                example: { id: "AST-A1B2C3D4", name: "Dell Latitude 5520", category: "Laptop", status: "active", department: "ICT Operations", assigned_to: "N. Dlamini", serial_num: "DL-2024-001", purchase_date: "2024-01-15", notes: "", created_at: "2024-05-19 21:00:00" }
+              }
+            }
+          },
+          "400": { description: "Validation error — invalid status or missing required fields" }
+        }
+      }
+    },
+    "/assets/{asset_id}": {
+      get: {
+        tags: ["Assets"],
+        summary: "Get Asset",
+        description: "Retrieve a single asset by its ID.",
+        operationId: "get_asset",
+        parameters: [{ name: "asset_id", in: "path", required: true, schema: { type: "string" }, example: "AST-001" }],
+        responses: {
+          "200": { description: "Asset found", content: { "application/json": { example: { id: "AST-001", name: "Dell Latitude 5520", category: "Laptop", status: "allocated" } } } },
+          "404": { description: "Asset not found" }
+        }
+      },
+      patch: {
+        tags: ["Assets"],
+        summary: "Update Asset",
+        description: "Partially update one or more fields on an existing asset.",
+        operationId: "update_asset",
+        parameters: [{ name: "asset_id", in: "path", required: true, schema: { type: "string" }, example: "AST-001" }],
+        requestBody: {
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  name: { type: "string" },
+                  category: { type: "string" },
+                  status: { type: "string", enum: ["active","allocated","maintenance","decommissioned"] },
+                  department: { type: "string" },
+                  assigned_to: { type: "string" },
+                  notes: { type: "string" }
+                }
+              },
+              example: { status: "maintenance", notes: "Scheduled quarterly service" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "Asset updated successfully" },
+          "404": { description: "Asset not found" },
+          "400": { description: "Validation error" }
+        }
+      },
+      delete: {
+        tags: ["Assets"],
+        summary: "Delete Asset",
+        description: "Permanently remove an asset from the system.",
+        operationId: "delete_asset",
+        parameters: [{ name: "asset_id", in: "path", required: true, schema: { type: "string" }, example: "AST-001" }],
+        responses: {
+          "204": { description: "Asset deleted successfully" },
+          "404": { description: "Asset not found" }
+        }
+      }
+    },
+    "/stats": {
+      get: {
+        tags: ["Analytics"],
+        summary: "Asset Statistics",
+        description: "Returns a summary of asset counts grouped by status and category.",
+        operationId: "get_stats",
+        responses: {
+          "200": {
+            description: "Statistics summary",
+            content: {
+              "application/json": {
+                example: {
+                  total: 24,
+                  by_status: { active: 10, allocated: 9, maintenance: 3, decommissioned: 2 },
+                  by_category: { Laptop: 8, Desktop: 5, Server: 4, Networking: 3, Mobile: 3, Peripheral: 1 }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+};
+
+SwaggerUIBundle({
+  spec,
+  dom_id: '#swagger-ui',
+  presets: [SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset],
+  layout: "BaseLayout",
+  deepLinking: true,
+  tryItOutEnabled: false,
+  defaultModelsExpandDepth: 1,
+  defaultModelExpandDepth: 1,
+});
+</script>
+</body>
+</html>
